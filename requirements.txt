@@ -2,3 +2,5 @@ gspread
 pandas 
 google-auth 
 openpyxl
+apscheduler
+pytz

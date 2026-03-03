@@ -5,7 +5,7 @@ from google.oauth2.service_account import Credentials
 # ===== CONFIG =====
 SERVICE_ACCOUNT_FILE = "service_account.json"
 SHEET_ID = "17khaqN0_TuGPR4uC2GWWq3iPIz-ZKyPSSmD8Rxidvyo"
-WORKSHEET_NAME = "Copy of Jul-Dec FYE 1"
+WORKSHEET_NAME = "FYE 1"
 
 SOURCE_FILE = "New Client Database.xlsx"
 
