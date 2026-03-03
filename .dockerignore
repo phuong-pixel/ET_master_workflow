@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Excel files (không cần trong container)
+*.xlsx
+*.xls
+
+# Logs
+*.log
+logs/
+
+# Other
+.DS_Store
+README.md
+LICENSE
+.cursorignore

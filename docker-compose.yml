@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  client-sync-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: client-sync-scheduler
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount service account (nếu muốn update từ host)
+      - ./service_account.json:/app/service_account.json:ro
+      # Mount logs (optional)
+      - ./logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Health check (optional)
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 1h
+      timeout: 10s
+      retries: 3
+      start_period: 10s
