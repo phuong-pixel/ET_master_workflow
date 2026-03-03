@@ -7,7 +7,7 @@ from highlight_red_audit import setup_audit_conditional_formatting
 # ===== CONFIG =====
 SERVICE_ACCOUNT_FILE = "service_account.json"
 SHEET_ID = "17khaqN0_TuGPR4uC2GWWq3iPIz-ZKyPSSmD8Rxidvyo"
-WORKSHEET_NAME = "FYE 1"
+WORKSHEET_NAME = "FYE"
 
 SOURCE_SHEET_ID = "18zN1JZf9gz2OALcHODbTuokbcsnVjeKRkV1cyrhom6w"
 SOURCE_WORKSHEET_NAME = "Master_DB"
