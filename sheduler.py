@@ -31,17 +31,21 @@ def run_sync():
 # Create scheduler
 scheduler = BlockingScheduler(timezone=vn_tz)
 
+hour = 9
+minute = 0
+time_of_day = "AM"
+
 # Schedule at 9AM VN time every day
 scheduler.add_job(
     run_sync,
-    trigger=CronTrigger(hour=9, minute=0),  # 9:00 AM
-    id='client_sync_9am',
-    name='Daily Client Sync at 9AM',
+    trigger=CronTrigger(hour=hour, minute=minute), 
+    id=f'client_sync_{hour}:{minute}{time_of_day}',
+    name=f'Daily Client Sync at {hour}:{minute}{time_of_day}',
     replace_existing=True
 )
 
 print("🚀 Scheduler started!")
-print("📅 Script sẽ chạy lúc 9:00 AM VN time mỗi ngày")
+print(f"📅 Script sẽ chạy lúc {hour}:{minute} {time_of_day} VN time mỗi ngày")
 print("⏸️  Press Ctrl+C to stop\n")
 
 try:
