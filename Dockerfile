@@ -6,8 +6,6 @@ RUN apt-get update && \
     update-ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
 # Set working directory
 WORKDIR /app
 
@@ -26,6 +24,9 @@ COPY test.py .
 COPY highlight_red_audit.py .
 COPY sheduler.py .
 COPY service_account.json .
+COPY tools ./tools
+
+EXPOSE 8386
 
 # Run scheduler
 CMD ["python", "-u", "sheduler.py"]
