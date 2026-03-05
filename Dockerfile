@@ -20,8 +20,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
+COPY api.py .
+COPY main.py .
 COPY test.py .
-COPY highlight_red_audit.py .
 COPY sheduler.py .
 COPY service_account.json .
 COPY tools ./tools
