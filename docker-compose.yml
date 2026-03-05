@@ -27,3 +27,18 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+  
+  client-sync-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: client-sync-api
+    command: uvicorn api:app --host 0.0.0.0 --port 8386
+    ports:
+      - "8386:8386"
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./service_account.json:/app/service_account.json:ro
+    restart: unless-stopped

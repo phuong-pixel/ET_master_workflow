@@ -2,12 +2,13 @@ import gspread
 import pandas as pd
 from google.oauth2.service_account import Credentials
 
-from highlight_red_audit import setup_audit_conditional_formatting
+from tools.highlight_red_audit import setup_audit_conditional_formatting
+from tools.accounting_closing import ACCOUNTING_CLOSING_COL, calc_accounting_deadline
 
 # ===== CONFIG =====
 SERVICE_ACCOUNT_FILE = "service_account.json"
 SHEET_ID = "17khaqN0_TuGPR4uC2GWWq3iPIz-ZKyPSSmD8Rxidvyo"
-WORKSHEET_NAME = "FYE"
+WORKSHEET_NAME = "Copy of FYE"
 
 SOURCE_SHEET_ID = "18zN1JZf9gz2OALcHODbTuokbcsnVjeKRkV1cyrhom6w"
 SOURCE_WORKSHEET_NAME = "Master_DB"
@@ -22,6 +23,7 @@ COLUMNS_TO_UPDATE = [
     "UEN (Unique Entity Number)",
     "Financial Year End",  
     "Services with ET Management",
+    "Accounting Closing Deadline"
 ]
 
 # Cột cho dòng mới khi Company Name chưa tồn tại
@@ -31,7 +33,8 @@ COLUMNS_FOR_NEW_ROW = [
     "Company Registered Name",
     "Financial Year End", 
     "Services with ET Management",
-    "Engagement Status"
+    "Engagement Status",
+    "Accounting Closing Deadline"
 ]
 
 # ==================
@@ -90,6 +93,7 @@ df_source = pd.DataFrame(records[1:], columns=records[0])
 print(f"📊 Tổng số clients trong source: {len(df_source)}")
 
 df_source[FYE_COL] = df_source[FYE_COL].str.strip().str.capitalize()
+df_source[ACCOUNTING_CLOSING_COL] = df_source[FYE_COL].apply(calc_accounting_deadline)
 
 if "Engagement Status" in df_source.columns:
     before_count = len(df_source)
@@ -242,6 +246,10 @@ for row_idx, row in enumerate(rows, start=2):
     # - Hoặc status = "Terminated" trong source
     if company_name and company_name not in df_source.index:
         clients_to_delete.append((row_idx, company_name))
+    
+    if not company_name:
+        clients_to_delete.append((row_idx, "[EMPTY COMPANY NAME]"))
+        continue
 
 if clients_to_delete:
     # Xóa từ dưới lên để index không bị lệch
@@ -253,6 +261,28 @@ if clients_to_delete:
         print(f"  • {company_name}")
 else:
     print("\nℹ️ Không có client nào cần xóa")
+
+deadline_col_idx = headers.index(ACCOUNTING_CLOSING_COL)  # 0-based
+worksheet.spreadsheet.batch_update({
+    "requests": [
+        {
+            "repeatCell": {
+                "range": {
+                    "sheetId": worksheet.id,
+                    "startRowIndex": 1,  # skip header
+                    "startColumnIndex": deadline_col_idx,
+                    "endColumnIndex": deadline_col_idx + 1
+                },
+                "cell": {
+                    "userEnteredFormat": {
+                        "horizontalAlignment": "LEFT"
+                    }
+                },
+                "fields": "userEnteredFormat.horizontalAlignment"
+            }
+        }
+    ]
+})
 
 # === 4. Summary ===
 print("\n" + "=" * 60)
