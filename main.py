@@ -286,28 +286,26 @@ def run_sync():
     })
 
     # === 4. Summary ===
+    updated_count = len([c for c in updated_clients if c.startswith('  •')])
+    new_count = len(new_rows)
+    deleted_count = len(clients_to_delete)
+
     print("\n" + "=" * 60)
-    if not cells_to_update and not new_rows:
+    if updated_count == 0 and new_count == 0 and deleted_count == 0:
         print("✓ Tất cả dữ liệu đã đồng bộ")
     else:
-        updated_count = len([c for c in updated_clients if c.startswith('  •')])
-        new_count = len(new_rows)
-        deleted_count = len(clients_to_delete)
-        print(f"🎉 Hoàn tất!")
-        print(f"📊 Tổng kết: {updated_count} updated | {new_count} new | {deleted_count} deleted | {updated_count + new_count + deleted_count} total changes")
+        print("🎉 Hoàn tất!")
+        print(
+            f"📊 Tổng kết: {updated_count} updated | "
+            f"{new_count} new | {deleted_count} deleted | "
+            f"{updated_count + new_count + deleted_count} total changes"
+        )
 
     # Highlight audit clients
     setup_audit_conditional_formatting(worksheet, headers)
 
     print("\n💡 Sử dụng Filter View trong Google Sheets để xem từng FYE")
     print("   Data → Filter views → Tạo filter theo FYE column")
-
-    if not cells_to_update and not new_rows:
-        print("✓ Tất cả dữ liệu đã đồng bộ")
-    else:
-        updated_count = len([c for c in updated_clients if c.startswith('  •')])
-        new_count = len(new_rows)
-        deleted_count = len(clients_to_delete)
 
     return {
         "updated": updated_count,
