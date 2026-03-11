@@ -1,0 +1,135 @@
+import streamlit as st
+import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
+from datetime import datetime, timedelta
+from streamlit_autorefresh import st_autorefresh
+
+# --- CẤU HÌNH ---
+SERVICE_ACCOUNT_FILE = "service_account.json"
+SHEET_ID = "17khaqN0_TuGPR4uC2GWWq3iPIz-ZKyPSSmD8Rxidvyo"
+WORKSHEET_NAME = "Copy of FYE"
+
+st.set_page_config(page_title="3V3 LIVE Monitor", layout="wide")
+st_autorefresh(interval=10000, key="datarefresh")
+
+# --- CSS TÙY CHỈNH CHO VÒNG TRÒN ---
+st.markdown("""
+<style>
+    .bubble-container {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        text-align: center;
+        padding: 20px;
+    }
+    .bubble {
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: black;
+        font-weight: bold;
+        margin: 10px;
+        transition: all 0.5s ease;
+        border: 1px solid #999;
+    }
+    .status-label { font-size: 14px; margin-bottom: 5px; color: #555; }
+    .status-value { font-size: 24px; }
+    
+    /* Màu sắc */
+    .bg-not-started { background-color: #e0e0e0; } /* Xám */
+    .bg-in-progress { background-color: #4a86e8; }  /* Xanh dương */
+    .bg-roadblock { background-color: #ff0000; }    /* Đỏ */
+</style>
+""", unsafe_allow_html=True)
+
+@st.cache_data(ttl=10)
+def load_data():
+    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+    creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=scope)
+    client = gspread.authorize(creds)
+    sh = client.open_by_key(SHEET_ID)
+    df = pd.DataFrame(sh.worksheet(WORKSHEET_NAME).get_all_records())
+    df.columns = df.columns.str.strip() # Dọn dẹp tên cột
+    return df
+
+def calculate_size(value, min_val=0, max_val=100):
+    # Tính toán kích thước vòng tròn từ 60px đến 150px dựa trên giá trị
+    base_size = 70
+    if value == 0: return base_size
+    scaling = (value / (max_val if max_val > 0 else 1)) * 80
+    return min(150, base_size + scaling)
+
+def render_bubbles(title, df, col_name):
+    counts = df[col_name].value_counts()
+    ns = int(counts.get("Not Started", 0))
+    ip = int(counts.get("In Progress", 0))
+    rb = int(counts.get("Roadblock", 0))
+    
+    max_val = max(ns, ip, rb, 1) # Để lấy tỷ lệ
+    
+    st.markdown(f"### {title}")
+    
+    html = f"""
+    <div class="bubble-container">
+        <div>
+            <div class="status-label">Not Started</div>
+            <div class="bubble bg-not-started" style="width:{calculate_size(ns, 0, max_val)}px; height:{calculate_size(ns, 0, max_val)}px;">
+                <span class="status-value">{ns}</span>
+            </div>
+        </div>
+        <div>
+            <div class="status-label">In Progress</div>
+            <div class="bubble bg-in-progress" style="width:{calculate_size(ip, 0, max_val)}px; height:{calculate_size(ip, 0, max_val)}px;">
+                <span class="status-value">{ip}</span>
+            </div>
+        </div>
+        <div>
+            <div class="status-label">Roadblock</div>
+            <div class="bubble bg-roadblock" style="width:{calculate_size(rb, 0, max_val)}px; height:{calculate_size(rb, 0, max_val)}px;">
+                <span class="status-value">{rb}</span>
+            </div>
+        </div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+# --- THỰC THI ---
+st.title("🔴 LIVE Snapshot - workflow.3v3.ai")
+
+try:
+    df = load_data()
+    
+    # Task 2: Bong bóng (3 cụm)
+    col1, col2, col3 = st.columns(3)
+    with col1: render_bubbles("Book Keeping", df, "Book Keeping Status")
+    with col2: render_bubbles("FRS Status", df, "FRS Status")
+    with col3: render_bubbles("AGM Status", df, "AGM Status")
+    
+    st.divider()
+    
+    # Task 1: Bảng Snapshot
+    st.subheader("📋 Daily Clients To Be Done")
+    
+    # Logic ngày tháng (Sửa lỗi 'September' đồ á)
+    df['FYE_Date'] = pd.to_datetime(df['Financial Year End'], errors='coerce') 
+    df['Deadline'] = df['FYE_Date'] + timedelta(days=90)
+    df['Days Left'] = (df['Deadline'] - pd.Timestamp.now().normalize()).dt.days
+    
+    todo_df = df[df['Book Keeping Status'] != 'Closing Done'].sort_values('Days Left')
+
+    def style_rows(row):
+        is_audit = "Audit" in str(row['Services with ET Management'])
+        return ['background-color: #ffcccc; color: red; font-weight: bold;' if is_audit else '' for _ in row]
+
+    st.dataframe(
+        todo_df[['UEN (Unique Entity Number)', 'Company Registered Name', 'Deadline', 'Days Left', 'Book Keeping Status', 'Services with ET Management']].style.apply(style_rows, axis=1),
+        use_container_width=True, hide_index=True
+    )
+
+    st.caption(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
+
+except Exception as e:
+    st.error(f"Error: {e}")

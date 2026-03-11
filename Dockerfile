@@ -24,10 +24,11 @@ COPY api.py .
 COPY main.py .
 COPY test.py .
 COPY sheduler.py .
+COPY snapshot.py .
 COPY service_account.json .
 COPY tools ./tools
 
-EXPOSE 8386
+EXPOSE 8386 8387
 
 # Run scheduler
 CMD ["python", "-u", "sheduler.py"]

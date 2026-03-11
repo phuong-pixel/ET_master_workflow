@@ -6,3 +6,8 @@ apscheduler
 pytz
 fastapi
 uvicorn
+streamlit 
+gspread 
+google-auth 
+pandas 
+streamlit-autorefresh

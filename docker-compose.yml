@@ -42,3 +42,19 @@ services:
     volumes:
       - ./service_account.json:/app/service_account.json:ro
     restart: unless-stopped
+
+  client-sync-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: client-sync-dashboard
+    # Chạy lệnh streamlit thay vì command mặc định của Dockerfile
+    command: streamlit run snapshot.py --server.port 8387 --server.address 0.0.0.0
+    ports:
+      - "8387:8387"
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./service_account.json:/app/service_account.json:ro
+    restart: unless-stopped
