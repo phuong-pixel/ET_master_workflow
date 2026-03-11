@@ -4,6 +4,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime, timedelta
 from streamlit_autorefresh import st_autorefresh
+from tools.filter_dashboard import filter_dashboard_data
 
 # --- CẤU HÌNH ---
 SERVICE_ACCOUNT_FILE = "service_account.json"
@@ -101,12 +102,13 @@ st.title("🔴 LIVE Snapshot - workflow.3v3.ai")
 
 try:
     df = load_data()
+    df_filtered = filter_dashboard_data(df.copy())
     
     # Task 2: Bong bóng (3 cụm)
     col1, col2, col3 = st.columns(3)
-    with col1: render_bubbles("Book Keeping", df, "Book Keeping Status")
-    with col2: render_bubbles("FRS Status", df, "FRS Status")
-    with col3: render_bubbles("AGM Status", df, "AGM Status")
+    with col1: render_bubbles("Book Keeping", df_filtered, "Book Keeping Status")
+    with col2: render_bubbles("FRS Status", df_filtered, "FRS Status")
+    with col3: render_bubbles("AGM Status", df_filtered, "AGM Status")
     
     st.divider()
     
@@ -114,11 +116,11 @@ try:
     st.subheader("📋 Daily Clients To Be Done")
     
     # Logic ngày tháng (Sửa lỗi 'September' đồ á)
-    df['FYE_Date'] = pd.to_datetime(df['Financial Year End'], errors='coerce') 
-    df['Deadline'] = df['FYE_Date'] + timedelta(days=90)
-    df['Days Left'] = (df['Deadline'] - pd.Timestamp.now().normalize()).dt.days
+    df_filtered['FYE_Date'] = pd.to_datetime(df_filtered['Financial Year End'], errors='coerce') 
+    df_filtered['Deadline'] = df_filtered['FYE_Date'] + timedelta(days=90)
+    df_filtered['Days Left'] = (df_filtered['Deadline'] - pd.Timestamp.now().normalize()).dt.days
     
-    todo_df = df[df['Book Keeping Status'] != 'Closing Done'].sort_values('Days Left')
+    todo_df = df_filtered[df_filtered['Book Keeping Status'] != 'Closing Done'].sort_values('Days Left')
 
     def style_rows(row):
         is_audit = "Audit" in str(row['Services with ET Management'])
