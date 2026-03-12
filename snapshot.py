@@ -12,7 +12,7 @@ SHEET_ID = "17khaqN0_TuGPR4uC2GWWq3iPIz-ZKyPSSmD8Rxidvyo"
 WORKSHEET_NAME = "Copy of FYE"
 
 st.set_page_config(page_title="3V3 LIVE Monitor", layout="wide")
-st_autorefresh(interval=10000, key="datarefresh")
+st_autorefresh(interval=5000, key="datarefresh")
 
 # --- CSS TÙY CHỈNH CHO VÒNG TRÒN ---
 st.markdown("""
@@ -128,7 +128,7 @@ try:
 
     st.dataframe(
         todo_df[['UEN (Unique Entity Number)', 'Company Registered Name', 'Deadline', 'Days Left', 'Book Keeping Status', 'Services with ET Management']].style.apply(style_rows, axis=1),
-        use_container_width=True, hide_index=True
+        width='stretch', hide_index=True
     )
 
     st.caption(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
