@@ -2,8 +2,12 @@ import pandas as pd
 from datetime import datetime
 
 def filter_dashboard_data(df: pd.DataFrame) -> pd.DataFrame:
-    # --- ĐIỀU KIỆN 1: Loại dịch vụ (Service Type) ---
-    # Chỉ giữ các dịch vụ trong danh sách cho phép
+    # 1. Khai báo đúng tên cột từ dữ liệu gốc
+    col_service = "Services with ET Management"
+    col_fye = "Financial Year End"
+    
+    # 2. ĐIỀU KIỆN 1: Loại dịch vụ
+    # Thêm "Accounting" vào danh sách để không bị sót data
     allowed_services = [
         "GST - Jan/Apr/Jul/Oct",
         "GST - Feb/May/Aug/Nov",
@@ -12,30 +16,24 @@ def filter_dashboard_data(df: pd.DataFrame) -> pd.DataFrame:
         "Accts - Daily", 
         "Accts - Weekly", 
         "Accts - Monthly", 
-        "Accts - Qtrly"
+        "Accts - Qtrly",
+        "Accounting" 
     ]
     
-    # Giả sử tên cột dịch vụ là "Service Type"
-    service_mask = df["Service Type"].isin(allowed_services)
+    # Biến danh sách thành một chuỗi regex: "GST|Accts - Daily|Accounting|..."
+    # Ký tự '|' có nghĩa là "HOẶC"
+    pattern = '|'.join(allowed_services)
     
-    # --- ĐIỀU KIỆN 2: Thời điểm hiển thị (FYE <= Today) ---
-    # 1. Chuyển đổi cột FYE sang định dạng datetime (nếu chưa có)
-    # Lưu ý: Cần đảm bảo cột này chứa thông tin ngày tháng năm đầy đủ
-    df["FYE_parsed"] = pd.to_datetime(df["FYE"], errors="coerce", dayfirst=True)
+    # Ép kiểu về string để tránh lỗi nếu có ô bị trống (NaN), sau đó tìm kiếm chuỗi
+    df[col_service] = df[col_service].fillna("").astype(str)
+    service_mask = df[col_service].str.contains(pattern, case=False, regex=True)
     
-    # 2. Lấy ngày hôm nay
+    # 3. ĐIỀU KIỆN 2: Thời điểm hiển thị (FYE <= Today)
+    df["FYE_parsed"] = pd.to_datetime(df[col_fye], errors="coerce", dayfirst=True)
     today = pd.Timestamp(datetime.now().date())
-    
-    # 3. Tạo mask lọc: FYE phải nhỏ hơn hoặc bằng hôm nay và không được NaT (lỗi parse)
     timeline_mask = (df["FYE_parsed"].notna()) & (df["FYE_parsed"] <= today)
     
-    # --- KẾT HỢP CẢ 2 ĐIỀU KIỆN ---
+    # 4. KẾT HỢP
     filtered_df = df[service_mask & timeline_mask].copy()
     
-    # Dọn dẹp: Xóa cột phụ nếu không cần dùng nữa
-    # filtered_df = filtered_df.drop(columns=["FYE_parsed"])
-    
     return filtered_df
-
-# Ví dụ áp dụng:
-# df_final = filter_dashboard_data(df_input)
