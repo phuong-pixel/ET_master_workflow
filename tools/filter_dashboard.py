@@ -28,7 +28,7 @@ def filter_dashboard_data(df: pd.DataFrame) -> pd.DataFrame:
     df[col_service] = df[col_service].fillna("").astype(str)
     service_mask = df[col_service].str.contains(pattern, case=False, regex=True)
     
-    # 3. ĐIỀU KIỆN 2: Thời điểm hiển thị (FYE <= Today)
+    # 3. ĐIỀU KIỆN 2: Thời điểm hiển thị (FYE <= Today) 
     df["FYE_parsed"] = pd.to_datetime(df[col_fye], errors="coerce", dayfirst=True, format='mixed')
     today = pd.Timestamp(datetime.now().date())
     timeline_mask = (df["FYE_parsed"].notna()) & (df["FYE_parsed"] <= today)

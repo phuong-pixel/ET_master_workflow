@@ -97,6 +97,57 @@ def render_bubbles(title, df, col_name):
     """
     st.markdown(html, unsafe_allow_html=True)
 
+STATUS_COLS = ["Book Keeping Status", "FRS Status", "AGM Status"]
+TARGET_STATUSES = ["Not Started", "In Progress", "Roadblock"]
+
+def count_statuses_across_3_cols(df, status_cols=STATUS_COLS):
+    # Chuẩn hóa dữ liệu để tránh lệch do khoảng trắng/NaN
+    normalized = (
+        df[status_cols]
+        .apply(lambda s: s.fillna("").astype(str).str.strip())
+    )
+
+    all_statuses = normalized.stack()  # gom 3 cột thành 1 cột
+    counts = all_statuses.value_counts()
+
+    return {
+        "Not Started": int(counts.get("Not Started", 0)),
+        "In Progress": int(counts.get("In Progress", 0)),
+        "Roadblock": int(counts.get("Roadblock", 0)),
+    }
+
+def render_bubbles_from_counts(title, counts):
+    ns = counts["Not Started"]
+    ip = counts["In Progress"]
+    rb = counts["Roadblock"]
+
+    max_val = max(ns, ip, rb, 1)
+
+    st.markdown(f"### {title}")
+    html = f"""
+    <div class="bubble-container">
+        <div>
+            <div class="status-label">Not Started</div>
+            <div class="bubble bg-not-started" style="width:{calculate_size(ns, 0, max_val)}px; height:{calculate_size(ns, 0, max_val)}px;">
+                <span class="status-value">{ns}</span>
+            </div>
+        </div>
+        <div>
+            <div class="status-label">In Progress</div>
+            <div class="bubble bg-in-progress" style="width:{calculate_size(ip, 0, max_val)}px; height:{calculate_size(ip, 0, max_val)}px;">
+                <span class="status-value">{ip}</span>
+            </div>
+        </div>
+        <div>
+            <div class="status-label">Roadblock</div>
+            <div class="bubble bg-roadblock" style="width:{calculate_size(rb, 0, max_val)}px; height:{calculate_size(rb, 0, max_val)}px;">
+                <span class="status-value">{rb}</span>
+            </div>
+        </div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
 # --- THỰC THI ---
 st.title("🔴 LIVE Snapshot - workflow.3v3.ai")
 
@@ -105,10 +156,8 @@ try:
     df_filtered = filter_dashboard_data(df.copy())
     
     # Task 2: Bong bóng (3 cụm)
-    col1, col2, col3 = st.columns(3)
-    with col1: render_bubbles("Book Keeping", df_filtered, "Book Keeping Status")
-    with col2: render_bubbles("FRS Status", df_filtered, "FRS Status")
-    with col3: render_bubbles("AGM Status", df_filtered, "AGM Status")
+    counts_3cols = count_statuses_across_3_cols(df_filtered)
+    render_bubbles_from_counts("Overall Status (Book Keeping + FRS + AGM)", counts_3cols)
     
     st.divider()
     
