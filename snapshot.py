@@ -80,23 +80,47 @@ try:
     
     st.subheader("📋 Daily Clients To Be Done")
     
-    # Tính toán Days Left dựa trên Deadline mới
+    # 1. Tính toán Days Left
     today = pd.Timestamp.now().normalize()
     df_filtered['Days Left'] = (df_filtered['Accounting Closing Deadline'] - today).dt.days
     
-    # Định dạng lại ngày tháng cho đẹp trước khi đưa lên web
-    df_filtered['Accounting Closing Deadline'] = df_filtered['Accounting Closing Deadline'].dt.strftime('%d %b %Y')
-    df_filtered['Financial Year End'] = df_filtered['FYE_parsed'].dt.strftime('%d %b %Y')
+    # 2. Tạo cột phụ chứa "Tháng Năm" (VD: December 2025) để đưa vào bộ lọc
+    # Dùng %B để ra chữ Tháng đầy đủ giống Google Sheets (January, December...)
+    df_filtered['FYE Filter'] = df_filtered['FYE_parsed'].dt.strftime('%B %Y')
+    df_filtered['Deadline Filter'] = df_filtered['Accounting Closing Deadline'].dt.strftime('%B %Y')
     
-    # Lọc bỏ các task đã đóng và loại bỏ khoảng trắng dư
+    # 3. Lọc trạng thái chưa đóng sổ
     df_filtered['Book Keeping Status'] = df_filtered['Book Keeping Status'].astype(str).str.strip()
     todo_df = df_filtered[df_filtered['Book Keeping Status'] != 'Closing Done'].sort_values('Days Left')
+
+    # --- BỘ LỌC MULTISELECT (GIỐNG GOOGLE SHEETS) ---
+    st.markdown("##### 🔍 Filter")
+    filter_col1, filter_col2 = st.columns(2)
+    
+    with filter_col1:
+        # Lấy danh sách các tháng hiện có (bỏ các ô trống)
+        fye_options = sorted(todo_df['FYE Filter'].dropna().unique().tolist())
+        selected_fye = st.multiselect("Filter Financial Year End:", fye_options, placeholder="Select month...")
+        
+    with filter_col2:
+        deadline_options = sorted(todo_df['Deadline Filter'].dropna().unique().tolist())
+        selected_deadline = st.multiselect("Filter Accounting Closing Deadline:", deadline_options, placeholder="Select month...")
+
+    # --- ÁP DỤNG BỘ LỌC NẾU NGƯỜI DÙNG CÓ CHỌN ---
+    if selected_fye:
+        todo_df = todo_df[todo_df['FYE Filter'].isin(selected_fye)]
+    if selected_deadline:
+        todo_df = todo_df[todo_df['Deadline Filter'].isin(selected_deadline)]
+
+    # 4. Định dạng lại ngày tháng cho đẹp trước khi đưa lên bảng web
+    todo_df['Accounting Closing Deadline'] = todo_df['Accounting Closing Deadline'].dt.strftime('%d %b %Y')
+    todo_df['Financial Year End'] = todo_df['FYE_parsed'].dt.strftime('%d %b %Y')
 
     def style_rows(row):
         is_audit = "Audit" in str(row['Services with ET Management'])
         return ['background-color: #ffcccc; color: red; font-weight: bold;' if is_audit else '' for _ in row]
 
-    # Khai báo các cột muốn hiển thị lên Dashboard (bao gồm Deadline)
+    # Khai báo các cột muốn hiển thị
     display_cols = [
         'UEN (Unique Entity Number)', 
         'Company Registered Name', 
@@ -109,7 +133,7 @@ try:
     
     st.dataframe(
         todo_df[display_cols].style.apply(style_rows, axis=1),
-        width='stretch', # Fix lỗi cảnh báo use_container_width
+        width='stretch', 
         hide_index=True
     )
 
