@@ -9,29 +9,31 @@ MONTH_MAP = {m.lower(): i for i, m in enumerate(calendar.month_name) if m}
 MONTH_MAP.update({m.lower(): i for i, m in enumerate(calendar.month_abbr) if m})
 
 def calc_accounting_deadline(fye_value: str) -> str:
-    if pd.isna(fye_value):
+    if pd.isna(fye_value) or str(fye_value).strip() == "":
         return ""
     
     raw = str(fye_value).strip().lower()
     month = MONTH_MAP.get(raw)
+    today = datetime.now()
 
-    # Fallback nếu input là định dạng ngày tháng
-    if month is None:
+    # Trường hợp 1: User chỉ nhập mỗi tên tháng (VD: "December", "Sep")
+    if month is not None:
+        # Nếu tháng FYE lớn hơn tháng hiện tại -> Đích thị là của năm ngoái
+        # Ví dụ: Nay là tháng 3/2026. FYE là tháng 12 -> Phải là 12/2025
+        year = today.year - 1 if month > today.month else today.year
+        base = pd.Timestamp(year=year, month=month, day=1)
+
+    # Trường hợp 2: User nhập ngày tháng đầy đủ (VD: "31 Dec 2025")
+    else:
         parsed = pd.to_datetime(raw, errors="coerce", dayfirst=True)
         if pd.isna(parsed):
             return ""
-        month = parsed.month
+        # PHẢI GIỮ NGUYÊN NGÀY THÁNG NĂM GỐC CỦA DATA
+        base = parsed
 
-    # Lấy năm hiện tại làm mốc
-    current_year = datetime.now().year
-    base = pd.Timestamp(year=current_year, month=month, day=1)
-    
     # Cộng thêm 3 tháng và lấy ngày cuối cùng của tháng đó
-    # Pandas tự động xử lý việc nhảy năm (vd: Dec 2024 -> Mar 2025)
-    deadline = (base + pd.DateOffset(months=3)) + pd.offsets.MonthEnd(0)
+    deadline = base + pd.DateOffset(months=3) + pd.offsets.MonthEnd(0)
     
-    # Format: %d %b %Y -> 31 Mar 2025
-    # Hoặc: %d %b %y -> 31 Mar 25
     return deadline.strftime("%d %b %Y")
 
 # --- Ví dụ kết quả ---
