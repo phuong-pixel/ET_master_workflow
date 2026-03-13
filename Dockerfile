@@ -27,6 +27,7 @@ COPY sheduler.py .
 COPY snapshot.py .
 COPY service_account.json .
 COPY tools ./tools
+COPY send_email.py .
 
 EXPOSE 8386 8387
 
