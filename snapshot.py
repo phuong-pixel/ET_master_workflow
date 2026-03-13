@@ -5,6 +5,7 @@ from google.oauth2.service_account import Credentials
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from tools.filter_dashboard import filter_dashboard_data
+from send_email import send_overdue_email
 
 # --- CẤU HÌNH ---
 SERVICE_ACCOUNT_FILE = "service_account.json"
@@ -136,6 +137,28 @@ try:
         width='stretch', 
         hide_index=True
     )
+
+    st.caption(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
+
+    st.divider()
+    st.markdown("##### 🚨 Overdue Alert")
+    
+    # Lọc ra những khách hàng đã trễ hạn (Days Left < 0)
+    overdue_clients = todo_df[todo_df['Days Left'] < 0]
+    
+    if not overdue_clients.empty:
+        st.error(f"Found {len(overdue_clients)} clients that are overdue for closing!")
+        
+        # Nút bấm gửi email
+        if st.button("📧 Send Email Report to Management"):
+            with st.spinner("Sending email..."):
+                result = send_overdue_email(overdue_clients)
+                if result is True:
+                    st.success("Email sent successfully to Ying, Michelle, Teck Wei and Conan!")
+                else:
+                    st.error(f"Error sending email: {result}")
+    else:
+        st.success("Great! No clients are overdue for closing.")
 
     st.caption(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
 

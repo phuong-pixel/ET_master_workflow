@@ -11,3 +11,4 @@ gspread
 google-auth 
 pandas 
 streamlit-autorefresh
+python-dotenv
