@@ -48,6 +48,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: client-sync-dashboard
+    env_file:
+      - .env
     # Chạy lệnh streamlit thay vì command mặc định của Dockerfile
     command: streamlit run snapshot.py --server.port 8387 --server.address 0.0.0.0
     ports:
